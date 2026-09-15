@@ -1,0 +1,14 @@
+# Cursor / AI agent
+.cursor/
+.cursoragent/
+.cursoragentCursor/
+**/agent-transcripts/
+.cursorrules
+
+# Java build
+*.class
+*.jar
+
+# OS
+.DS_Store
+Thumbs.db
