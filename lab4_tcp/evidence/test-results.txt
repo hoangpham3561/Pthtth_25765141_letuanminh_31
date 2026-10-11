@@ -1,0 +1,116 @@
+================================================================================
+KẾT QUẢ KIỂM THỬ THỰC HÀNH LAB 04: LẬP TRÌNH SOCKET TCP VÀ UDP TRONG JAVA
+Môi trường thực thi: Java 25.0.2 LTS, macOS zsh
+Thời gian thực hiện: 2026-10-11
+================================================================================
+
+1. MỤC 4.1: KHẢO SÁT ĐỊA CHỈ MẠNG (HostInspector)
+--------------------------------------------------------------------------------
+[Lệnh chạy]: java -cp out network.HostInspector localhost
+[Kết quả]:
+Host: localhost
+- IP: 127.0.0.1
+  Kiểu IP: IPv4
+  Canonical: localhost
+  Loopback: true
+  Site local: false
+- IP: 0:0:0:0:0:0:0:1
+  Kiểu IP: IPv6
+  Canonical: localhost
+  Loopback: true
+  Site local: false
+
+[Lệnh chạy]: java -cp out network.HostInspector example.com
+[Kết quả]:
+Host: example.com
+- IP: 172.66.147.243 (IPv4)
+- IP: 104.20.23.154 (IPv4)
+- IP: 2606:4700:10:0:0:0:ac42:93f3 (IPv6)
+- IP: 2606:4700:10:0:0:0:6814:179a (IPv6)
+
+[Lệnh chạy kiểm tra lỗi]: java -cp out network.HostInspector host-khong-ton-tai.invalid
+[Kết quả]: Không phân giải được host: host-khong-ton-tai.invalid (Xử lý ngoại lệ an toàn, không văng stacktrace)
+
+--------------------------------------------------------------------------------
+2. BÀI 1: HOST VÀ URI INSPECTOR (HostAndUriInspector)
+--------------------------------------------------------------------------------
+[Lệnh chạy]: java -cp out network.HostAndUriInspector localhost "https://localhost:5000/api/v1?user=minh#section1"
+[Kết quả]:
+- Nhận diện IPv4 (127.0.0.1) & IPv6 (::1), Loopback: true, Site Local: false.
+- Phân tích URI:
+  + Scheme: https
+  + Host: localhost
+  + Port: 5000
+  + Path: /api/v1
+  + Query: user=minh
+  + Fragment: section1
+- Bắt lỗi URI sai cú pháp (Illegal character in authority) và Hostname không tồn tại chính xác.
+
+--------------------------------------------------------------------------------
+3. MỤC 4.2 & 4.3: TCP COMMAND SERVER & MULTI-CLIENT SERVER
+--------------------------------------------------------------------------------
+[Lệnh chạy]: java -cp out tcp.TcpCommandServer 5050
+- PING                  -> OK PONG
+- UPPER xin chào        -> OK XIN CHÀO
+- TIME                  -> OK 2026-10-11T15:40:43.274606
+- ABC                   -> ERR UNKNOWN_COMMAND
+- QUIT                  -> OK BYE
+[Đánh giá MultiClientTcpServer]:
+- Hỗ trợ ExecutorService fixed thread pool (20 luồng).
+- Thử nghiệm 3 client kết nối đồng thời: Cả 3 client nhận kết quả độc lập, không bị block, khi 1 client đóng thì các client khác vẫn hoạt động bình thường.
+
+--------------------------------------------------------------------------------
+4. MỤC 4.4: UDP ECHO SERVER & CLIENT
+--------------------------------------------------------------------------------
+[Lệnh chạy]: java -cp out udp.UdpEchoServer 5001 &
+             java -cp out udp.UdpEchoClient localhost 5001 "xin chào UDP"
+[Kết quả]:
+- Client gửi: "xin chào UDP"
+- Server phản hồi: "ACK XIN CHÀO UDP" (Bảo toàn tiếng Việt UTF-8 chính xác).
+[Kiểm thử Timeout khi sai port]:
+- Gửi tới port 5999 -> "Hết 3 giây nhưng chưa nhận được phản hồi từ server!" (Đúng setSoTimeout 3000ms).
+
+--------------------------------------------------------------------------------
+5. BÀI 2: ĐỔI CHỮ SỐ THÀNH CHỮ (DigitToWordServer)
+--------------------------------------------------------------------------------
+[Kiểm thử ca biên bắt buộc]:
+- 0         -> không
+- 9         -> chín
+- (rỗng)    -> ERR INVALID_DIGIT
+- 10        -> ERR INVALID_DIGIT
+- a         -> ERR INVALID_DIGIT
+-  5        -> ERR INVALID_DIGIT (khoảng trắng bị bắt lỗi)
+- QUIT      -> OK BYE
+
+--------------------------------------------------------------------------------
+6. BÀI 3: DỊCH VỤ NGÀY GIỜ (TCP & UDP)
+--------------------------------------------------------------------------------
+[TCP kết quả]:
+- DATE     -> OK 11/10/2026 (Khuôn dạng dd/MM/yyyy)
+- TIME     -> OK 15:41:17   (Khuôn dạng HH:mm:ss)
+- DATETIME -> OK 11/10/2026 15:41:17
+- QUIT     -> OK BYE
+[UDP kết quả]:
+- DATE, TIME, DATETIME cho kết quả tương đương, không cần QUIT do UDP là giao thức phi trạng thái (stateless/connectionless).
+
+--------------------------------------------------------------------------------
+7. BÀI 4: MÁY TÍNH TỪ XA (RemoteCalculatorServer)
+--------------------------------------------------------------------------------
+[Kiểm thử các ca mẫu]:
+- CALC + 100 200 -> OK 300
+- CALC / 10 0     -> ERR DIVIDE_BY_ZERO
+- CALC % 10 3     -> ERR UNSUPPORTED_OPERATOR
+- CALC + a 2      -> ERR INVALID_NUMBER
+- CALC + 10       -> ERR INVALID_FORMAT
+- CALC * 15 4     -> OK 60
+
+--------------------------------------------------------------------------------
+8. BÀI 5: PHÒNG CHAT ĐA CLIENT (ChatServer)
+--------------------------------------------------------------------------------
+- Nickname duy nhất: Kiểm tra trùng tên và thông báo lỗi.
+- Broadcast: Khi Alice gửi MSG, Bob lập tức nhận được `[Alice]: Xin chao moi nguoi!`.
+- USERS: Trả về danh sách người dùng đang online.
+- QUIT: Thông báo rời phòng cho các thành viên còn lại và giải phóng tài nguyên an toàn.
+================================================================================
+TẤT CẢ CÁC BÀI THỰC HÀNH VÀ BÀI TẬP ĐỀU ĐẠT CHUẨN YÊU CẦU ĐỀ BÀI (100% PASS)
+================================================================================
